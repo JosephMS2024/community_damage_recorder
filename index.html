@@ -24,10 +24,9 @@
                 "esri/widgets/Locate",
                 "esri/widgets/Search",
                 "esri/layers/FeatureLayer",
-                "esri/renderers/HeatmapRenderer",
                 "esri/widgets/BasemapGallery",
                 "esri/widgets/Expand" 
-            ], (esriConfig, Map, MapView, Locate, Search, FeatureLayer, HeatmapRenderer, BasemapGallery, Expand) => {
+            ], (esriConfig, Map, MapView, Locate, Search, FeatureLayer, BasemapGallery, Expand) => {
 
                 //api key and basemap layer set
                 esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurFa5WfXMQlRQPnfNYzLFFYga1fw0U3EB74KznnD3Q-j0AB9HdCmpOghHtkHppjTP_28Gd65ao6PCq3TkG0tJ3hZXDgrukv8aAoFxebfSdW8q97PlMsrfq7nQ5seQfazEIltTu-OWRzaW7f4FLTvO2sPZ-GI21IUJHlx3EgphVNeA0XX7woV69BRNK0kyac0EPDamoSzTK8mrrLhPaWW2zQiKQ4JWB0Okf4wgrn3A9wN3AT1_R7CKhNBZ"
@@ -65,35 +64,30 @@
                     index: 2
                 });
 
+
+                // Define a pop-up for usaeduLayer
+                const popupDamage = {
+                    "title": "Damage Reported",
+                    "content": "<b>Date and Time:</b> {NAME}<br><b>Damage Description:</b> {TOT_ENROLL}<br><b>Email of Reporter:</b> {TOT_ENROLL}<br><b>Photo:</b> {TOT_ENROLL}<br>"
+                }
+
+
+
                 // Create featurelayer from feature service 
                 const surveyLayer = new FeatureLayer({ 
                     // URL to the service 
-                    url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/survey123_0c29460a922a441ea76a6d582b143f77_results/FeatureServer"
+                    url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/survey123_d20ea4bfb7934f04a7b4ba2551cdad23_results/FeatureServer",
+                
+                    //adding the popup here
+                    outFields: ["NAME","TOT_ENROLL", "EMAIL", "PHOTO"],
+                    popupTemplate: popupDamage
+
                 });
 
-                /*
+
                 //adds survey layer to map/app
-                map.add(layer);
-                */
-
-                // Create a heatmap renderer
-                const heatmapRenderer = new HeatmapRenderer({
-                    field: "FieldToWeightHeatmap",  // Replace with the appropriate field to weight the heatmap
-                    colorStops: [
-                        { color: "rgba(255, 140, 0, 0)", ratio: 0 },
-                        { color: "rgba(255, 140, 0, 1)", ratio: 0.1 },
-                        { color: "rgba(255, 69, 0, 1)", ratio: 0.25 },
-                        { color: "rgba(255, 0, 0, 1)", ratio: 0.5 }
-                    ],
-                    maxPixelIntensity: 100,
-                    minPixelIntensity: 0
-                });
-
-                // Apply the heatmap renderer to the layer
-                surveyLayer.renderer = heatmapRenderer;
-
-                // Add survey layer with heatmap to the map
                 map.add(surveyLayer);
+                
 
 
                 //sets basemap gallery
@@ -114,15 +108,6 @@
                     index: 2
                 });
 
-                // Function to toggle heatmap visibility
-                const toggleHeatmap = () => {
-                    surveyLayer.visible = !surveyLayer.visible; // Toggle visibility
-                    const toggleBtn = document.getElementById("toggleHeatmapBtn");
-                    toggleBtn.innerHTML = surveyLayer.visible ? "Hide Heatmap" : "Show Heatmap"; // Update button text
-                };
-
-                // Adding event listener to the toggle button
-                document.getElementById("toggleHeatmapBtn").addEventListener("click", toggleHeatmap);
 
 
 
@@ -161,9 +146,6 @@
                 background-color: #005a87;
             }
 
-            .toggleBtn {
-                top: 50px; /* Positioning the toggle button under the "Add Record" button */
-            }
 
 
         </style>
@@ -172,9 +154,8 @@
     <body>
 
         <!-- creating section to hold map -->
-        <a href="https://arcg.is/08C1HG0"target="_blank" class="addRecordBtn">Add Record</a>
+        <a href="https://arcg.is/019SO52" target="_blank" class="addRecordBtn">Add Record</a>
         
-        <button id="toggleHeatmapBtn" class="toggleBtn">Hide Heatmap</button>
 
         <div id="viewDiv"></div>
 
