@@ -68,7 +68,7 @@
                 // Define a pop-up for usaeduLayer
                 const popupDamage = {
                     "title": "Damage Reported",
-                    "content": "<b>Date and Time:</b> {NAME}<br><b>Damage Description:</b> {TOT_ENROLL}<br><b>Email of Reporter:</b> {TOT_ENROLL}<br><b>Photo:</b> {TOT_ENROLL}<br>"
+                    "content": "<b>Date and Time:</b> {Date and Time of Report}<br><b>Damage Description:</b> {Description of Damage}<br><b>Email of Reporter:</b> {Your Email}<br><b>Photo:</b> {Photo of Damage}<br>"
                 }
 
 
@@ -79,7 +79,7 @@
                     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/survey123_d20ea4bfb7934f04a7b4ba2551cdad23_results/FeatureServer",
                 
                     //adding the popup here
-                    outFields: ["NAME","TOT_ENROLL", "EMAIL", "PHOTO"],
+                    outFields: ["Date and Time of Report","Description of Damage", "Your Email", "Photo of Damage"],
                     popupTemplate: popupDamage
 
                 });
