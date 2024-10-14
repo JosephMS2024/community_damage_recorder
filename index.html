@@ -25,8 +25,9 @@
                 "esri/widgets/Search",
                 "esri/layers/FeatureLayer",
                 "esri/widgets/BasemapGallery",
-                "esri/widgets/Expand" 
-            ], (esriConfig, Map, MapView, Locate, Search, FeatureLayer, BasemapGallery, Expand) => {
+                "esri/widgets/Expand",
+                "esri/request" //added esri/request for photos
+            ], (esriConfig, Map, MapView, Locate, Search, FeatureLayer, BasemapGallery, Expand, esriRequest) => { //added esriRequest
 
                 //api key and basemap layer set
                 esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurFa5WfXMQlRQPnfNYzLFFYga1fw0U3EB74KznnD3Q-j0AB9HdCmpOghHtkHppjTP_28Gd65ao6PCq3TkG0tJ3hZXDgrukv8aAoFxebfSdW8q97PlMsrfq7nQ5seQfazEIltTu-OWRzaW7f4FLTvO2sPZ-GI21IUJHlx3EgphVNeA0XX7woV69BRNK0kyac0EPDamoSzTK8mrrLhPaWW2zQiKQ4JWB0Okf4wgrn3A9wN3AT1_R7CKhNBZ"
@@ -65,12 +66,116 @@
                 });
 
 
+                //the following (popupDamage) is a collaboration between the student and ChatGPT. The student could get the three attributes (date and time, description of damage, and your email
+                // but could not get the photo to populate. The student worked with ChatGPT to manually parse the data from the REST API. Unfortunately after doing this, the original way
+                //that the data for the first three attributes was sent was no longer working, so again, it was manually queried. This may have defeated the purpose of the API itself, as this
+                //became an exercise in pure javascript, but lead to quite a bit of learning.)
+
+                //creates popupDamage format and directly accesses the REST API for attributes and sends them to the popups
+                //The photos are sent via a link, test photos were off of my computer and just headshots or shots of town
+                const popupDamage = {
+                    "title": "Damage Reported",
+                    "content": function(feature) {
+    
+                        //Use ObjectID as the field name for the object ID
+                        const objectId = feature.graphic.attributes.objectid;
+
+                        //Log the objectId to confirm it's being retrieved
+                        console.log("Object ID:", objectId);
+
+                        //Ensure that objectId exists
+                        if (!objectId) {
+                        return `<b>Error:</b> Unable to retrieve the object ID.`;
+                        }
+                        
+                        // **Step 1:** Prepare the base content for the popup
+                        let baseContent = `<b>Date and Time:</b> N/A<br>
+                                        <b>Damage Description:</b> N/A<br>
+                                        <b>Email of Reporter:</b> N/A<br>`;
+
+                        //location of the feature server
+                        const layerUrl = "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/survey123_d20ea4bfb7934f04a7b4ba2551cdad23_results/FeatureServer";
+
+                        // **Step 3:** Fetch attributes directly from the REST API
+                        const queryUrl = `${layerUrl}/0/query?where=objectid=${objectId}&outFields=date_and_time_of_report,description_of_damage,your_email&f=json`;
+
+                        return esriRequest(queryUrl, {
+                            responseType: "json"
+                        }).then(response => {
+                            if (response.data.features.length > 0) {
+                                const attributes = response.data.features[0].attributes;
+
+                                // Access the attributes fetched directly from API
+                                const dateReported = attributes["date_and_time_of_report"] ? new Date(attributes["date_and_time_of_report"]).toLocaleString() : 'N/A';
+                                const damageDescription = attributes["description_of_damage"] || 'N/A';
+                                const reporterEmail = attributes["your_email"] || 'N/A';
+
+                                // Update the base content with fetched values
+                                baseContent = `<b>Date and Time:</b> ${dateReported}<br>
+                                            <b>Damage Description:</b> ${damageDescription}<br>
+                                            <b>Email of Reporter:</b> ${reporterEmail}<br>`;
+                            } else {
+                                console.warn("No attributes found for the specified object ID.");
+                            }
+
+
+
+                        // Querying attachments from the feature service
+                        return esriRequest(`${layerUrl}/0/${objectId}/attachments?f=html`, {
+                            responseType: "text"
+                        })
+                        .then((response) => {
+                            let attachmentContent = '';
+
+                            // Parse the HTML response manually
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(response.data, "text/html");
+
+
+                            // Find the rows with attachment info
+                            const rows = doc.querySelectorAll("tr");
+
+                            rows.forEach((row) => {
+                                // Check for the row that contains the attachment link
+                                if (row.innerHTML.includes("Name:")) {
+                                    const attachmentName = row.querySelector('a').textContent;  // Get the attachment name
+                                    const attachmentId = row.querySelector('a').href.split('/attachments/')[1].split('?')[0];  // Get the attachment ID
+                                    const attachmentUrl = `${layerUrl}/0/${objectId}/attachments/${attachmentId}`;
+                                    
+                                    // Create the attachment link
+                                    attachmentContent += `<br><b>Photo:</b> <a href="${attachmentUrl}" target="_blank">${attachmentName}</a>`;
+                                }
+                            });
+
+                            if (!attachmentContent) {
+                                attachmentContent = '<br><b>Photo:</b> No photo available';
+                            }
+
+                            // Return the base content along with the attachment link
+                            return baseContent + attachmentContent;
+                        })
+                        .catch((error) => {
+                            console.error("Error fetching attachments:", error);
+                            // Fallback content in case of an error fetching attachments
+                            return baseContent + '<br><b>Photo:</b> Unable to fetch photos';
+                        });
+                    }).catch((error) => {
+                        console.error("Error fetching attributes:", error);
+                        return `<b>Error:</b> Unable to fetch attribute data.`;
+                    });
+                    }
+                };
+
+
+
+
+                /*
                 // Define a pop-up for usaeduLayer
                 const popupDamage = {
                     "title": "Damage Reported",
-                    "content": "<b>Date and Time:</b> {Date and Time of Report}<br><b>Damage Description:</b> {Description of Damage}<br><b>Email of Reporter:</b> {Your Email}<br><b>Photo:</b> {Photo of Damage}</br>"
+                    "content": "<b>Date and Time:</b> {Date and Time of Report}<br><b>Damage Description:</b> {Description of Damage}<br><b>Email of Reporter:</b> {Your Email}<br><b>Photo:</b> {Attachments:}</br>" 
                 }
-
+                */
 
 
                 // Create featurelayer from feature service 
@@ -79,7 +184,8 @@
                     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/survey123_d20ea4bfb7934f04a7b4ba2551cdad23_results/FeatureServer",
                 
                     //adding the popup here
-                    outFields: ["Date and Time of Report","Description of Damage", "Your Email", "Photo of Damage"],
+                    outFields: ["*"],
+                    //outFields: ["date_and_time_of_report","description_of_damage", "your_email"],
                     popupTemplate: popupDamage
 
                 });
