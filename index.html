@@ -50,7 +50,7 @@
                     view: view
                 });
 
-                // Add the locate widget to the top left corner of the view
+                //Add the locate widget to the top left corner of the view
                 view.ui.add(locateBtn, {
                     position: "top-left"
                 });
@@ -59,7 +59,7 @@
                 const searchWidget = new Search({
                     view: view
                 });
-                // Adds the search widget to top center of the screen
+                //Adds the search widget to top center of the screen
                 view.ui.add(searchWidget, {
                     position: "top-left",
                     index: 2
@@ -67,9 +67,10 @@
 
 
                 //the following (popupDamage) is a collaboration between the student and ChatGPT. The student could get the three attributes (date and time, description of damage, and your email
-                // but could not get the photo to populate. The student worked with ChatGPT to manually parse the data from the REST API. Unfortunately after doing this, the original way
+                //but could not get the photo to populate. The student worked with ChatGPT to manually parse the data from the REST API. Unfortunately after doing this, the original way
                 //that the data for the first three attributes was sent was no longer working, so again, it was manually queried. This may have defeated the purpose of the API itself, as this
-                //became an exercise in pure javascript, but lead to quite a bit of learning.)
+                //became an exercise in pure javascript, but lead to quite a bit of learning. The biggest thing was the the photo comes out in html and needs to be returned as a string
+                //and the actual values from the fields come back as a json, leading to two different requests)
 
                 //creates popupDamage format and directly accesses the REST API for attributes and sends them to the popups
                 //The photos are sent via a link, test photos were off of my computer and just headshots or shots of town
@@ -88,7 +89,7 @@
                         return `<b>Error:</b> Unable to retrieve the object ID.`;
                         }
                         
-                        // **Step 1:** Prepare the base content for the popup
+                        //Set the base content for the popup
                         let baseContent = `<b>Date and Time:</b> N/A<br>
                                         <b>Damage Description:</b> N/A<br>
                                         <b>Email of Reporter:</b> N/A<br>`;
@@ -96,9 +97,10 @@
                         //location of the feature server
                         const layerUrl = "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/survey123_d20ea4bfb7934f04a7b4ba2551cdad23_results/FeatureServer";
 
-                        // **Step 3:** Fetch attributes directly from the REST API
+                        //fetch attributes directly from the REST API
                         const queryUrl = `${layerUrl}/0/query?where=objectid=${objectId}&outFields=date_and_time_of_report,description_of_damage,your_email&f=json`;
 
+                        //returns the json of the fields
                         return esriRequest(queryUrl, {
                             responseType: "json"
                         }).then(response => {
@@ -120,63 +122,52 @@
 
 
 
-                        // Querying attachments from the feature service
+                        //Querying attachments from the feature service
                         return esriRequest(`${layerUrl}/0/${objectId}/attachments?f=html`, {
                             responseType: "text"
                         })
                         .then((response) => {
                             let attachmentContent = '';
 
-                            // Parse the HTML response manually
+                            //Parse the HTML response manually
                             const parser = new DOMParser();
                             const doc = parser.parseFromString(response.data, "text/html");
 
 
-                            // Find the rows with attachment info
+                            //Find the rows with attachment info
                             const rows = doc.querySelectorAll("tr");
 
                             rows.forEach((row) => {
-                                // Check for the row that contains the attachment link
+                                //Check for the row that contains the attachment link
                                 if (row.innerHTML.includes("Name:")) {
                                     const attachmentName = row.querySelector('a').textContent;  // Get the attachment name
                                     const attachmentId = row.querySelector('a').href.split('/attachments/')[1].split('?')[0];  // Get the attachment ID
                                     const attachmentUrl = `${layerUrl}/0/${objectId}/attachments/${attachmentId}`;
                                     
-                                    // Create the attachment link
+                                    //Create the attachment link
                                     attachmentContent += `<br><b>Photo:</b> <a href="${attachmentUrl}" target="_blank">${attachmentName}</a>`;
                                 }
                             });
-
+                            //if no attchment found then shows No Photo Available as this is an optional field in the survey
                             if (!attachmentContent) {
                                 attachmentContent = '<br><b>Photo:</b> No photo available';
                             }
 
-                            // Return the base content along with the attachment link
+                            //Return the base content along with the attachment link
                             return baseContent + attachmentContent;
                         })
                         .catch((error) => {
                             console.error("Error fetching attachments:", error);
-                            // Fallback content in case of an error fetching attachments
+                            //Fallback content in case of an error fetching attachments
                             return baseContent + '<br><b>Photo:</b> Unable to fetch photos';
                         });
+                        //will shot this error if attributes unable to be fetched
                     }).catch((error) => {
                         console.error("Error fetching attributes:", error);
                         return `<b>Error:</b> Unable to fetch attribute data.`;
                     });
                     }
                 };
-
-
-
-
-                /*
-                // Define a pop-up for usaeduLayer
-                const popupDamage = {
-                    "title": "Damage Reported",
-                    "content": "<b>Date and Time:</b> {Date and Time of Report}<br><b>Damage Description:</b> {Description of Damage}<br><b>Email of Reporter:</b> {Your Email}<br><b>Photo:</b> {Attachments:}</br>" 
-                }
-                */
-
 
                 // Create featurelayer from feature service 
                 const surveyLayer = new FeatureLayer({ 
@@ -258,7 +249,7 @@
 
     </head>
     <body>
-
+        
         <!-- creating section to hold map -->
         <a href="https://arcg.is/019SO52" target="_blank" class="addRecordBtn">Add Record</a>
         
