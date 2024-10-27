@@ -26,8 +26,10 @@
                 "esri/layers/FeatureLayer",
                 "esri/widgets/BasemapGallery",
                 "esri/widgets/Expand",
+                "esri/widgets/Graphic,
+                "esri/widgets/GraphicsLayer,
                 "esri/request" //added esri/request for photos
-            ], (esriConfig, Map, MapView, Locate, Search, FeatureLayer, BasemapGallery, Expand, esriRequest) => { //added esriRequest
+            ], (esriConfig, Map, MapView, Locate, Search, FeatureLayer, BasemapGallery, Expand, Graphic, GraphicsLayer, esriRequest) => { //added esriRequest
 
                 //api key and basemap layer set
                 esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurFa5WfXMQlRQPnfNYzLFFYga1fw0U3EB74KznnD3Q-j0AB9HdCmpOghHtkHppjTP_28Gd65ao6PCq3TkG0tJ3hZXDgrukv8aAoFxebfSdW8q97PlMsrfq7nQ5seQfazEIltTu-OWRzaW7f4FLTvO2sPZ-GI21IUJHlx3EgphVNeA0XX7woV69BRNK0kyac0EPDamoSzTK8mrrLhPaWW2zQiKQ4JWB0Okf4wgrn3A9wN3AT1_R7CKhNBZ"
@@ -170,11 +172,20 @@
                 };
 
                 // Create featurelayer from feature service 
+                const surveylayer_renderer = {
+                   "type": "simple",
+                   "symbol": {
+                   "type": "picture-marker",
+                   "url": "https://JosephMS2024.github.io/esrijs_lab2/helicopter-icon-21965.png",
+                   "width": "17px",
+                   "height": "17px"
+                    
                 const surveyLayer = new FeatureLayer({ 
                     // URL to the service 
                     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/survey123_d20ea4bfb7934f04a7b4ba2551cdad23_results/FeatureServer",
                 
                     //adding the popup here
+                    renderer: surveylayer_renderer,
                     outFields: ["*"],
                     //outFields: ["date_and_time_of_report","description_of_damage", "your_email"],
                     popupTemplate: popupDamage
